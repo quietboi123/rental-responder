@@ -87,15 +87,6 @@ listings = [
         "baths": 1,
         "img": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=1600&auto=format&fit=crop"
     },
-    {
-        "id": "seaport-19d",
-        "address": "131 Seaport Blvd #19D",
-        "neighborhood": "Seaport",
-        "rent": 5195,
-        "beds": 1,
-        "baths": 1.5,
-        "img": "https://images.unsplash.com/photo-1600585154340-1e4ce9a1d7fb?q=80&w=1600&auto=format&fit=crop"
-    },
 ]
 
 # ---------- Header ----------
