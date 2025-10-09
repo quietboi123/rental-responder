@@ -34,9 +34,9 @@ st.markdown(
       .btn {
         display: inline-block; text-align: center; padding: 10px 12px; width: 100%;
         border-radius: 10px; font-weight: 700; text-decoration: none;
-        background: #1E3A8A; color: white;
+        background: #1E3A8A; color: #FFFFFF !important;
       }
-      .btn:hover { filter: brightness(1.05); }
+      .btn:hover { filter: brightness(1.05); color: #FFFFFF !important}
       .thumb {
         width: 100%; height: 160px; border-radius: 12px; object-fit: cover;
         background: #e9eef7;
