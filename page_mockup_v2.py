@@ -3,7 +3,7 @@ from datetime import date
 
 st.set_page_config(page_title="bostonrentals.com (mock)", page_icon="🏙️", layout="wide")
 
-# ---------- Simple styles for prettier cards ----------
+# ---------- Simple styles (unchanged) ----------
 st.markdown(
     """
     <style>
@@ -49,7 +49,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ---------- Fake data (Boston area) ----------
+# ---------- Fake data ----------
 listings = [
     {
         "id": "backbay-1a",
@@ -89,19 +89,17 @@ listings = [
     },
 ]
 
-# ---------- Simple page routing ----------
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-if "selected_listing" not in st.session_state:
-    st.session_state.selected_listing = None
+# ---------- Routing setup ----------
+params = st.query_params
+current_page = params.get("page", "home")
+selected_id = params.get("id", None)
+
+def go_to_chat(lid):
+    st.query_params["page"] = "chat"
+    st.query_params["id"] = lid
 
 def go_home():
-    st.session_state.page = "home"
-    st.session_state.selected_listing = None
-
-def open_chat(listing):
-    st.session_state.page = "chat"
-    st.session_state.selected_listing = listing
+    st.query_params.clear()
 
 # ---------- Card renderer ----------
 def render_card(l):
@@ -114,14 +112,18 @@ def render_card(l):
         st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-        # Replace href link with Streamlit button
-        if st.button("Chat about this listing", key=l["id"]):
-            open_chat(l)
+        # Keep same blue button style (exact)
+        st.markdown(
+            f"""
+            <a class="btn" href="?page=chat&id={l['id']}">Chat about this listing</a>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------- HOME PAGE ----------
-if st.session_state.page == "home":
+# ---------- HOME ----------
+if current_page == "home":
     st.markdown('<div class="site-title">bostonrentals.com</div>', unsafe_allow_html=True)
     st.markdown('<div class="site-sub">Hand-picked apartments across Boston — mock demo</div>', unsafe_allow_html=True)
 
@@ -137,26 +139,25 @@ if st.session_state.page == "home":
 
     st.caption(f"© {date.today().year} bostonrentals.com — mock UI for demo purposes only.")
 
-# ---------- CHAT PAGE ----------
-elif st.session_state.page == "chat" and st.session_state.selected_listing:
-    l = st.session_state.selected_listing
+# ---------- CHAT ----------
+elif current_page == "chat" and selected_id:
+    l = next((x for x in listings if x["id"] == selected_id), None)
 
-    # Back button
     if st.button("⬅ Back to listings"):
         go_home()
         st.stop()
 
-    # Listing card at top
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown(f'<img class="thumb" src="{l["img"]}" alt="Listing photo">', unsafe_allow_html=True)
-    st.markdown(f'<div class="addr">📍 {l["address"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="neigh">{l["neighborhood"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="price">${l["rent"]:,}/mo</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    if l:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown(f'<img class="thumb" src="{l["img"]}" alt="Listing photo">', unsafe_allow_html=True)
+        st.markdown(f'<div class="addr">📍 {l["address"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="neigh">{l["neighborhood"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="price">${l["rent"]:,}/mo</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("### 💬 Inquire about your listing")
-    st.text_input("Type your message here...", placeholder="Hi, I'm interested in this apartment!")
-    st.button("Send (mock)", key="send_btn")
+        st.markdown("### 💬 Inquire about your listing")
+        st.text_input("Type your message here...", placeholder="Hi, I'm interested in this apartment!")
+        st.button("Send (mock)")
 
-    st.caption("This chat is a visual mockup — messages are not functional yet.")
+        st.caption("This chat is a visual mockup — messages are not functional yet.")
