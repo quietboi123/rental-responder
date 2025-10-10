@@ -156,8 +156,7 @@ elif current_page == "chat" and selected_id:
         st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("### 💬 Inquire about your listing")
+        st.markdown("### Inquire about your listing")
         st.text_input("Type your message here...", placeholder="Hi, I'm interested in this apartment!")
-        st.button("Send (mock)")
 
         st.caption("This chat is a visual mockup — messages are not functional yet.")
