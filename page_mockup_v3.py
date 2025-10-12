@@ -177,8 +177,31 @@ if current_page == "home":
     st.caption(f"© {date.today().year} bostonrentals.com — mock UI for demo purposes only.")
 
 
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# 7. Chat page
+# Creates a chat page based on the listing which is clicked
 
+elif current_page == "chat" and selected_id: #if current_page = "chat" AND selected_id is not blank
+    l = next((x for x in listings if x["id"] == selected_id), None) #takes first listing for which id = selected_id
 
+    if st.button("⬅ Back to listings"): #creates the button which runs the go home function.
+        go_home()
+        st.stop()
+
+    if l: #renders the current chat page based on the CSS defined in section 2 and the data from Listings.
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown(f'<img class="thumb" src="{l["img"]}" alt="Listing photo">', unsafe_allow_html=True)
+        st.markdown(f'<div class="addr">📍 {l["address"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="neigh">{l["neighborhood"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="price">${l["rent"]:,}/mo</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown("### Inquire about your listing")
+        st.text_input("Type your message here...", placeholder="Hi, I'm interested in this apartment!")
+
+        st.caption("This chat is a visual mockup — messages are not functional yet.")
 
 
 
