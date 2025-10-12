@@ -187,7 +187,7 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
 
     if st.button("⬅ Back to listings"): #creates the button which runs the go home function.
         go_home()
-        st.stop()
+        st.rerun()
 
     if l: #renders the current chat page based on the CSS defined in section 2 and the data from Listings.
         st.markdown('<div class="card">', unsafe_allow_html=True)
