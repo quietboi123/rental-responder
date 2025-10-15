@@ -247,7 +247,9 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         st.markdown(f'<div class="price">${l["rent"]:,}/mo</div>', unsafe_allow_html=True)
         st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("### Inquire about your listing")
 
+        
         # Create a unique key for this listing's chat
         key = chat_key(l["id"])
 
@@ -269,8 +271,6 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
             with st.chat_message(msg["role"]):
                 #msg["content"] is the text to display
                 st.markdown(msg["content"])
-
-        st.markdown("### Inquire about your listing")
 
         # Chat input at the bottom of the page
         user_msg = st.chat_input(placeholder = "Hi, I'm interested in this apartment!")
