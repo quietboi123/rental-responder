@@ -35,6 +35,27 @@ OPENAI_API_KEY = get_secrets("OPENAI_API_KEY", "openai", "api_key")
 SUPABASE_URL = get_secrets("SUPABASE_URL", "supabase", "url")
 SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_key")
 
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# 1C. OpenAI System Prompt 
+# Defines the prompt for interaction with OpenAI LLM
+
+system_prompt = f"""
+
+"""
+
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# 1D. Helpers
+# Several helper functions to use later on
+
+# Creates a unique key for each listing to save chat history
+def chat_key(listing_id: str) -> str:
+    return f"chat_history_{listing_id}"
+
+# Creates a generic chat reply as a placeholder while we get AI chat functionality up and running
+def generate_reply(_):
+    return f"Thanks for your message! This is a generic reply while our AI-powered system is still being built"
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
@@ -186,7 +207,7 @@ def render_card(l):
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-# 7. Home page
+# 7A. Home page
 # Creates a 3-column grid, with two rows (top and bottom) each showing listings using render_card function defined above. Title and sub-title are HTML blocks styled by CSS
 
 if current_page == "home":
@@ -208,7 +229,7 @@ if current_page == "home":
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-# 7. Chat page
+# 7B. Chat page
 # Creates a chat page based on the listing which is clicked
 
 elif current_page == "chat" and selected_id: #if current_page = "chat" AND selected_id is not blank
@@ -218,7 +239,7 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         go_home()
         st.rerun()
 
-    if l: #renders the current chat page based on the CSS defined in section 2 and the data from Listings.
+    if l: # Renders the current chat page based on the CSS defined in section 2 and the data from Listings.
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown(f'<img class="thumb" src="{l["img"]}" alt="Listing photo">', unsafe_allow_html=True)
         st.markdown(f'<div class="addr">📍 {l["address"]}</div>', unsafe_allow_html=True)
@@ -227,10 +248,45 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         st.markdown('<div class="meta">🛏️ ' + str(l["beds"]) + ' bed &nbsp; • &nbsp; 🛁 ' + str(l["baths"]) + ' bath</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("### Inquire about your listing")
-        st.text_input("Type your message here...", placeholder="Hi, I'm interested in this apartment!")
+        # Create a unique key for this listing's chat
+        key = chat_key(l["id"])
 
-        st.caption("This chat is a visual mockup — messages are not functional yet.")
+        # If this is the first time opening this listing, start with a greeting message
+        if key not in st.session_state:
+            st.session_state[key] = [
+                {
+                    "role": "assistant",
+                    "content": (
+                        f"Hi! Thanks for your interest in **{l['address']}**.\n\n "
+                        "Chat here to get started on scheduling a tour."
+                    ),
+                }
+            ]
+
+        # Show all messages as chat bubbles
+        for msg in st.session_state[key]:
+            #msg["role"] is either "assistant" or "user"
+            with st.chat_message(msg["role"]):
+                #msg["content"] is the text to display
+                st.markdown(msg["content"])
+
+        st.markdown("### Inquire about your listing")
+
+        # Chat input at the bottom of the page
+        user_msg = st.chat_input(placeholder = "Hi, I'm interested in this apartment!")
+
+        # If the user types a message and hit enter
+        if user_msg:
+            # 1 - Save the user's message to history
+            st.session_state[key].append({"role": "user", "content": user_msg})
+
+            # 2 - Create the automatic reply & save to history
+            assistant_reply = generate_reply(user_msg)
+            st.session_state[key].append({"role": "assistant", "content": assistant_reply})
+
+            # 3 - Immediately re-run so the new bubble appears above
+            st.rerun()
+
 
 
 
