@@ -1,12 +1,40 @@
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-# 1. Imports and page setup 
+# 1A. Imports and page setup 
 # Imports packages and sets up basic page configuration.
 
+import os 
 import streamlit as st
+from openai import OpenAI 
 from datetime import date
 
 st.set_page_config(page_title = "bostonrentals.com (mock)", page_icon = "🏙️", layout = "wide")
+
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# 1B. Secrets 
+# Brings in secrete keys for calling of Supabase and OpenAI API
+
+def get_secrets(name_env: str, *secrets_path):
+    """
+    Prefer flat environment variables (Render, GH Actions, etc.).
+    Fall back to nested st.secrets['section']['key'] used on Streamlit Cloud.
+    """
+    val = os.environ.get(name_env)
+    if val:
+        return val
+    try:
+        s = st.secrets
+        for k in secrets_path:
+            s = s[k]
+        return s
+    except Exception:
+        return None
+
+OPENAI_API_KEY = get_secrets("OPENAI_API_KEY", "openai", "api_key")
+SUPABASE_URL = get_secrets("SUPABASE_URL", "supabase", "url")
+SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_key")
+
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
@@ -57,6 +85,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
