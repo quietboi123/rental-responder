@@ -41,7 +41,10 @@ SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_
 # Defines the prompt for interaction with OpenAI LLM
 
 system_prompt = f"""
-
+You are a friendly leasing agent for a Boston rental site. You will receive and respond to inbounds from prospective renters looking to inquire about properties.
+Your job is to pre-qualify the prospective renter in a way that is concise and helpful. Always follow the following rules:
+1. Always ask one follow-up if it moves the conversation towards scheduling a tour
+2. If asked for facts (rent, beds, pets, availability, etc.), offer to connect the user with an agent to confirm
 """
 
 #-------------------------------------------------------------
@@ -53,9 +56,33 @@ system_prompt = f"""
 def chat_key(listing_id: str) -> str:
     return f"chat_history_{listing_id}"
 
-# Creates a generic chat reply as a placeholder while we get AI chat functionality up and running
-def generate_reply(_):
-    return f"Thanks for your message! This is a generic reply while our AI-powered system is still being built"
+# Define the model to use from OpenAI
+model_name = "GPT-4.1"
+
+# Creates a reply by calling OpenAI's API based on previously defined prompt
+def generate_reply(user_message: str, history: list[dict]) -> str:
+    """
+    Turns chat history of specific listing into an OpenAI chat request. 
+    History is defined as st.session_state[key] list of {role, content} messages
+    """
+    try:
+        # Keep the chat history
+        recent = history
+        
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(recent)
+        messages.append({"role":"user", "content": user_message})
+        
+        resp = client.chat.completions.create(
+            model = model_name,
+            messages = messages,
+            temperature = 0.4,
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        # Fail safe so that the app does not crash
+        return ("Sorry, I'm having trouble connecting. Can you please try again in a moment?")
+        
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
@@ -281,7 +308,7 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
             st.session_state[key].append({"role": "user", "content": user_msg})
 
             # 2 - Create the automatic reply & save to history
-            assistant_reply = generate_reply(user_msg)
+            assistant_reply = generate_reply(user_msg, st.session_state[key])
             st.session_state[key].append({"role": "assistant", "content": assistant_reply})
 
             # 3 - Immediately re-run so the new bubble appears above
