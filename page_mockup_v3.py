@@ -35,12 +35,6 @@ OPENAI_API_KEY = get_secrets("OPENAI_API_KEY", "openai", "api_key")
 SUPABASE_URL = get_secrets("SUPABASE_URL", "supabase", "url")
 SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_key")
 
-
-st.write("🔐 Secrets test:")
-st.write("OPENAI_API_KEY loaded:", bool(OPENAI_API_KEY))
-st.write("SUPABASE_URL loaded:", bool(SUPABASE_URL))
-st.write("SUPABASE_SERVICE_KEY loaded:", bool(SUPABASE_SERVICE_KEY))
-
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 # 1C. OpenAI System Prompt 
