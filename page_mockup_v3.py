@@ -57,7 +57,7 @@ def chat_key(listing_id: str) -> str:
     return f"chat_history_{listing_id}"
 
 # Define the model to use from OpenAI
-model_name = "gpt-4o"
+model_name = "gpt-4.1"
 
 # Creates a reply by calling OpenAI's API based on previously defined prompt
 def generate_reply(user_message: str, history: list[dict]) -> str:
@@ -133,6 +133,22 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# List of available models
+import streamlit as st
+from openai import OpenAI
+
+st.caption("🔎 Checking available models for this API key…")
+client = OpenAI()  # reads OPENAI_API_KEY from environment or st.secrets
+
+try:
+    models = client.models.list()
+    ids = sorted(m.id for m in models.data)
+    st.write("Sample of models available to this key:", ids[:20])
+except Exception as e:
+    st.error(f"Could not list models: {e}")
 
 
 #-------------------------------------------------------------
