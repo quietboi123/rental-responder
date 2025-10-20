@@ -312,6 +312,8 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         if user_msg:
             # 1 - Save the user's message to history
             st.session_state[key].append({"role": "user", "content": user_msg})
+            with st.chat_message("user"):
+                st.markdown(user_msg)
 
             # 2 - Create the automatic reply & save to history
             assistant_reply = generate_reply(user_msg, st.session_state[key])
