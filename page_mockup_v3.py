@@ -57,7 +57,7 @@ def chat_key(listing_id: str) -> str:
     return f"chat_history_{listing_id}"
 
 # Define the model to use from OpenAI
-model_name = "GPT-4.1"
+model_name = "gpt-4.1"
 
 # Creates a reply by calling OpenAI's API based on previously defined prompt
 def generate_reply(user_message: str, history: list[dict]) -> str:
