@@ -12,9 +12,10 @@ st.set_page_config(page_title = "bostonrentals.com (mock)", page_icon = "🏙️
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-# 1B. Secrets 
-# Brings in secrete keys for calling of Supabase and OpenAI API
+# 1B. Secrets & OpenAI Client
+# Brings in secrete keys for calling of Supabase and OpenAI API. Create OpenAI Client.
 
+# Get secrets
 def get_secrets(name_env: str, *secrets_path):
     """
     Prefer flat environment variables (Render, GH Actions, etc.).
@@ -34,6 +35,12 @@ def get_secrets(name_env: str, *secrets_path):
 OPENAI_API_KEY = get_secrets("OPENAI_API_KEY", "openai", "api_key")
 SUPABASE_URL = get_secrets("SUPABASE_URL", "supabase", "url")
 SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_key")
+
+# Create OpenAI client
+def get_openai_client():
+    return OpenAI(api_key=OPENAI_API_KEY)
+
+client = get_openai_client()
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
