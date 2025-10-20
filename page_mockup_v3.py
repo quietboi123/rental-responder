@@ -155,6 +155,10 @@ listings = [
     "rent": 3200,
     "beds": 2,
     "baths": 1,
+    "pets": "yes",
+    "maxtenants": 2,
+    "moveindate": "09-01-2026",
+    "moveincost": 6600,
     "img": "https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1600&auto=format&fit=crop"
   },
   {
@@ -164,6 +168,10 @@ listings = [
     "rent": 4500,
     "beds": 2,
     "baths": 1,
+    "pets": "yes",
+    "maxtenants": 2,
+    "moveindate": "09-01-2026",
+    "moveincost": 13500,
     "img": "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1600&auto=format&fit=crop"
   },
   {
@@ -173,6 +181,10 @@ listings = [
     "rent": 6000,
     "beds": 3,
     "baths": 4,
+    "pets": "no",
+    "maxtenants": 4,
+    "moveindate": "01-01-2026",
+    "moveincost": 18000,
     "img": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1600&auto=format&fit=crop"
   },
   {
@@ -183,6 +195,10 @@ listings = [
     "rent": 5500,
     "beds": 3,
     "baths": 2,
+    "pets": "no",
+    "maxtenants": 4,
+    "moveindate": "01-01-2026",
+    "moveincost": 16500,
     "img": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=1600&auto=format&fit=crop"
   },
 ]
