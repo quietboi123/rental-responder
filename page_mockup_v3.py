@@ -35,6 +35,12 @@ OPENAI_API_KEY = get_secrets("OPENAI_API_KEY", "openai", "api_key")
 SUPABASE_URL = get_secrets("SUPABASE_URL", "supabase", "url")
 SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_key")
 
+
+st.write("🔐 Secrets test:")
+st.write("OPENAI_API_KEY loaded:", bool(OPENAI_API_KEY))
+st.write("SUPABASE_URL loaded:", bool(SUPABASE_URL))
+st.write("SUPABASE_SERVICE_KEY loaded:", bool(SUPABASE_SERVICE_KEY))
+
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 # 1C. OpenAI System Prompt 
@@ -133,23 +139,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-#-------------------------------------------------------------
-#-------------------------------------------------------------
-# List of available models
-import streamlit as st
-from openai import OpenAI
-
-st.caption("🔎 Checking available models for this API key…")
-client = OpenAI()  # reads OPENAI_API_KEY from environment or st.secrets
-
-try:
-    models = client.models.list()
-    ids = sorted(m.id for m in models.data)
-    st.write("Sample of models available to this key:", ids[:20])
-except Exception as e:
-    st.error(f"Could not list models: {e}")
-
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
