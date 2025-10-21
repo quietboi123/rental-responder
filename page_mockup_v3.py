@@ -89,7 +89,18 @@ def generate_reply(user_message: str, history: list[dict]) -> str:
     except Exception as e:
         # Fail safe so that the app does not crash
         return ("Sorry, I'm having trouble connecting. Can you please try again in a moment?")
-        
+
+# Creates an ammendment to the OpenAI call with the information on the current listing
+def listing_fact_for_llm(current_listing: dict) -> str:
+    lines = [
+        "Listing Facts:",
+        f" - address: {current_listing['address']}",
+        f" - allows pets: {current_listing['pets']}",
+        f" - max number of tenants allowed: {current_listing['maxtenants']}",
+        f" - preferred move in date: {current_listing['moveindate']}",
+        f" - cash required at move: {current_listing['moveincost']}"
+    ]
+    return "\n".join(lines)
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
@@ -332,7 +343,8 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
                 st.markdown(user_msg)
 
             # 2 - Create the automatic reply & save to history
-            assistant_reply = generate_reply(user_msg, st.session_state[key])
+            # assistant_reply = generate_reply(user_msg, st.session_state[key])
+            assistant_reply = listing_fact_for_llm(l)
             st.session_state[key].append({"role": "assistant", "content": assistant_reply})
 
             # 3 - Immediately re-run so the new bubble appears above
