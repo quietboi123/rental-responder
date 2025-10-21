@@ -48,10 +48,31 @@ client = get_openai_client()
 # Defines the prompt for interaction with OpenAI LLM
 
 system_prompt = f"""
-You are a friendly leasing agent for a Boston rental site. You will receive and respond to inbounds from prospective renters looking to inquire about properties.
-Your job is to pre-qualify the prospective renter in a way that is concise and helpful. Always follow the following rules:
-1. Always ask one follow-up if it moves the conversation towards scheduling a tour
-2. If asked for facts (rent, beds, pets, availability, etc.), offer to connect the user with an agent to confirm
+You are a friendly and professional **virtual assistant for a real estate agent** who manages rental property listings. Your role is to handle inbound messages from prospective renters and guide them through the process of **inquiring about, qualifying for, and scheduling a showing** for a specific property.
+
+## Your goals (in order of priority)
+1. **Pre-qualify the user.**  
+   - Politely and conversationally collect key details that help determine fit for the listing (e.g., move-in date, income, credit, pets, number of occupants, etc.).  
+   - Reference the property’s requirements as appropriate (e.g., “This building doesn’t allow pets” or “This unit is available starting November 1st”).  
+   - If the user’s circumstances don’t fit the property’s requirements, gently explain and offer to connect them to other available listings.
+
+2. **Schedule a showing as soon as possible.**  
+   - Once the user appears qualified, offer to schedule a tour.  
+   - Confirm their availability, preferred contact method, and any next steps.  
+   - Keep the conversation efficient and helpful — every reply should move the conversation closer to scheduling the showing.
+
+## Style & tone
+- Warm, concise, and professional (like a helpful leasing agent texting or chatting with a prospective tenant).  
+- Avoid long paragraphs — use clear, friendly sentences.  
+- Always sound human and helpful; never robotic.
+
+## Response rules
+- **Always respond in a way that advances either qualification or scheduling.**
+- **Ask one question at a time** unless listing key information that’s essential to clarify.
+- If the user asks about factual details (rent, beds, pets, availability, etc.), answer clearly using the property info provided below. If uncertain, offer to confirm with an agent.
+- If the conversation stalls, politely re-engage with a relevant question.
+
+### Property Details Listed As Follows
 """
 
 #-------------------------------------------------------------
@@ -67,7 +88,7 @@ def chat_key(listing_id: str) -> str:
 model_name = "gpt-4.1"
 
 # Creates a reply by calling OpenAI's API based on previously defined prompt
-def generate_reply(user_message: str, history: list[dict]) -> str:
+def generate_reply(user_message: str, history: list[dict], listing: dict) -> str:
     """
     Turns chat history of specific listing into an OpenAI chat request. 
     History is defined as st.session_state[key] list of {role, content} messages
@@ -76,7 +97,10 @@ def generate_reply(user_message: str, history: list[dict]) -> str:
         # Keep the chat history
         recent = history
         
-        messages = [{"role": "system", "content": system_prompt}]
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": listing_fact_for_llm(listing)}
+        ]
         messages.extend(recent)
         messages.append({"role":"user", "content": user_message})
         
@@ -343,8 +367,7 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
                 st.markdown(user_msg)
 
             # 2 - Create the automatic reply & save to history
-            # assistant_reply = generate_reply(user_msg, st.session_state[key])
-            assistant_reply = listing_fact_for_llm(l)
+            assistant_reply = generate_reply(user_msg, st.session_state[key], l)
             st.session_state[key].append({"role": "assistant", "content": assistant_reply})
 
             # 3 - Immediately re-run so the new bubble appears above
