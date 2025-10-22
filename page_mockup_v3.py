@@ -115,7 +115,7 @@ def generate_reply(user_message: str, history: list[dict], listing: dict) -> str
     History is defined as st.session_state[key] list of {role, content} messages
     """
     try:
-        # Keep the chat history
+        # Keep the chat history and append the specific listing to the prompt
         recent = history
         
         messages = [
