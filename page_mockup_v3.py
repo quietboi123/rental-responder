@@ -293,6 +293,20 @@ def chat_key(listing_id: str) -> str:
 model_name = "gpt-4.1"
 default_tz = "America/New_York"
 
+# Define default confirmation JSON as a fail safe for my classifier bot
+DEFAULT_CONFIRMATION = {
+    "version": "1.0",
+    "ready": False,
+    "status": "not_ready",
+    "start_time_iso": None,
+    "end_time_iso": None,
+    "timezone": "America/New_York",
+    "location_text": None,
+    "notes": "classifier_default_fallback",
+    "confidence": 0.0,
+    "reason": "Fallback due to error or invalid/empty model response.",
+}
+
 # Creates a reply by calling OpenAI's API based on previously defined prompt
 def generate_reply(user_message: str, history: list[dict], listing: dict) -> str:
     """
@@ -332,7 +346,62 @@ def listing_fact_for_llm(current_listing: dict) -> str:
     return "\n".join(lines)
 
 
+# Classifies the conversation as having a confirmed showing date and time or not
+def classify_showing_confirmation(user_message: str, history: list[dict], listing: dict) -> ConfirmationResult:
+    """
+    Call the LLM to decide if the conversation has a fully-confirmed showing
+    (date, time, place). Returns a strict dict that ALWAYS has the same keys.
+    """
+    recent = history
 
+    messages = [
+        {"role": "system", "content": classifier_prompt},
+    ]
+    messages.extend(recent)
+
+    try:
+        resp = client.chat.completions.create(
+            model = model_name,
+            messages = messages,
+            temperature = 0,  # classification -> keep deterministic
+            # Force valid JSON output (supported chat models only)
+            response_format={"type": "json_object"},
+        )
+
+        raw = (resp.choices[0].message.content or "").strip()
+
+        # Parse JSON or fall back to default
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            # If the model somehow violated JSON mode, fail safe:
+            out = DEFAULT_CONFIRMATION.copy()
+            out["notes"] = "classifier_json_parse_error"
+            out["reason"] = f"Invalid JSON: {raw[:200]}"
+            return out
+
+        # Enforce schema completeness & types; fill any missing keys with defaults
+        out = DEFAULT_CONFIRMATION.copy()
+        out.update({
+            "version": data.get("version", "1.0"),
+            "ready": bool(data.get("ready", False)),
+            "status": str(data.get("status", "not_ready")),
+            "start_time_iso": data.get("start_time_iso"),
+            "end_time_iso": data.get("end_time_iso"),
+            "timezone": data.get("timezone", default_tz),
+            "location_text": data.get("location_text"),
+            "notes": data.get("notes"),
+            "confidence": float(data.get("confidence", 0.0)),
+            "reason": str(data.get("reason", "No reason provided.")),
+        })
+        return out
+
+    except Exception as e:
+        # Absolute fail-safe so your app never crashes
+        out = DEFAULT_CONFIRMATION.copy()
+        out["notes"] = "classifier_exception"
+        out["reason"] = f"{type(e).__name__}: {str(e)[:200]}"
+        return out
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
