@@ -4,9 +4,11 @@
 # Imports packages and sets up basic page configuration.
 
 import os 
+import json
 import streamlit as st
 from openai import OpenAI 
 from datetime import date
+from typing import TypedDict
 
 st.set_page_config(page_title = "bostonrentals.com (mock)", page_icon = "🏙️", layout = "wide")
 
@@ -96,6 +98,186 @@ Example closing line:
 ### Property Details Listed As Follows
 """
 
+classifier_prompt = f"""
+You are a confirmation classifier for an apartment-rental chat. Your only job is to read the latest conversation transcript and decide whether the renter has fully confirmed a showing (date, time, and place) so that an email calendar invite can be sent. Then output a single JSON object that matches the schema below—no prose, no extra keys, no trailing commas.
+
+## What “confirmed” means (strict rules)
+
+Return ready: true only if ALL of the following are true:
+1. Specific time and day is agreed (e.g., “Tue Nov 4 at 3:00 PM”).
+    - Accept short confirmations like “Yes, 3 PM next Tuesday works” only when they directly refer to a specific time and / or day proposed in the immediately preceding context.
+    - Vague time (“tomorrow afternoon”, “around 5”) is not confirmed.
+3. Explicit acceptance of the slot/place (e.g., “Perfect, confirm for me”, “See you then”, “Yes let’s lock 3 PM on Saturday”).
+    - Negotiations, alternatives, “can we do 4 instead?”, “I’m free Tue or Wed”, “send me options” ⇒ not confirmed.
+    - If any of the above is missing, return ready: false.
+
+## Additional decision notes
+
+If the user proposes a concrete slot/place but the agent has not acknowledged/accepted, it is not confirmed ⇒ ready: false with a reason.
+If the user says “send the invite” but lacks a specific time and place, it is not confirmed.
+If there is a conflict (multiple times mentioned without a clear final choice), it is not confirmed.
+If a reschedule is requested or the user introduces uncertainty, it is not confirmed.
+
+## Timezone handling
+
+Use the conversation’s stated timezone if present.
+Otherwise assume "America/New_York" as the default.
+Output all datetimes in ISO 8601 with timezone offset, e.g., "2025-11-04T15:00:00-05:00".
+If an end time is not explicitly provided but a duration is given (e.g., “30 minutes”), compute end_time_iso. Otherwise set end_time_iso as 30 minutes after the start time.
+
+## Output schema (return this exact shape every time)
+Return exactly one JSON object with these keys in this order. Use null when unknown/not applicable. Never omit keys.
+
+{
+"version": "1.0",
+"ready": true|false,
+"status": "confirmed" | "tentative" | "proposal" | "ambiguous" | "conflict" | "not_ready",
+"start_time_iso": "YYYY-MM-DDTHH:MM:SS±HH:MM" | null,
+"end_time_iso": "YYYY-MM-DDTHH:MM:SS±HH:MM" | null,
+"timezone": "IANA/Zone" | null,
+"location_text": "string" | null,
+"notes": "short string" | null,
+"confidence": 0.0–1.0,
+"reason": "1–2 sentence explanation; must be present even when ready=true"
+}
+
+## Definitions to guide status:
+
+"confirmed": user clearly accepts a specific time and place.
+"tentative": specific slot suggested but user signals uncertainty (“probably”, “might”, “if”).
+"proposal": user proposes a specific slot/place but hasn’t accepted one.
+"ambiguous": time/place referenced vaguely (“tomorrow afternoon”, “there” without prior place).
+"conflict": multiple competing times without a final single choice.
+"not_ready": anything else that is clearly not ready.
+
+## Style & constraints
+
+Output strict JSON only. No Markdown, no commentary, no extra text.
+Never fabricate dates, times, or places. Use null if missing.
+Keep reason concise and factual, citing the exact phrase(s) you relied on.
+Be conservative: when uncertain, prefer ready: false.
+
+## Few-shot examples
+
+Example A — Confirmed acceptance of proposed slot/place
+
+INPUT (last messages summarized):
+Agent: “Can you do Tue Nov 4 at 3:00 PM at 123 Main St, Boston (Leasing Office)?”
+User: “Yes, that works. See you there.”
+
+OUTPUT:
+{
+"version": "1.0",
+"ready": true,
+"status": "confirmed",
+"start_time_iso": "2025-11-04T15:00:00-05:00",
+"end_time_iso": null,
+"timezone": "America/New_York",
+"location_text": "123 Main St, Boston (Leasing Office)",
+"notes": "User explicitly accepted agent’s proposed time and place.",
+"confidence": 0.97,
+"reason": "User said 'Yes, that works. See you there' immediately after the agent proposed Tue Nov 4 3:00 PM at 123 Main St."
+}
+
+Example B — Vague time ⇒ not ready
+
+INPUT:
+User: “Tomorrow afternoon should be fine—can you send an invite?”
+
+OUTPUT:
+{
+"version": "1.0",
+"ready": false,
+"status": "ambiguous",
+"start_time_iso": null,
+"end_time_iso": null,
+"timezone": "America/New_York",
+"location_text": null,
+"notes": "Vague ‘tomorrow afternoon’ and no address.",
+"confidence": 0.95,
+"reason": "Time is non-specific (‘tomorrow afternoon’). No place provided."
+}
+
+Example C — Proposal (user offers a concrete option, not yet accepted)
+
+INPUT:
+User: “How about Wed Nov 5 at 5:30 PM at the leasing office?”
+
+OUTPUT:
+{
+"version": "1.0",
+"ready": false,
+"status": "proposal",
+"start_time_iso": "2025-11-05T17:30:00-05:00",
+"end_time_iso": null,
+"timezone": "America/New_York",
+"location_text": "Leasing office",
+"notes": "User proposed a slot; not yet accepted by agent.",
+"confidence": 0.9,
+"reason": "User suggested a specific time and place but no acceptance occurred."
+}
+
+Example D — Conflicting options
+
+INPUT:
+User: “I can do Tue 3 PM or Wed 5 PM. Which is better?”
+
+OUTPUT:
+{
+"version": "1.0",
+"ready": false,
+"status": "conflict",
+"start_time_iso": null,
+"end_time_iso": null,
+"timezone": "America/New_York",
+"location_text": null,
+"notes": "Multiple candidate times; no single choice.",
+"confidence": 0.92,
+"reason": "Two different times mentioned without a final selection."
+}
+
+Example E — Place missing ⇒ not ready
+
+INPUT:
+User: “Let’s lock Mon at 10 AM. Send the invite.”
+
+OUTPUT:
+{
+"version": "1.0",
+"ready": false,
+"status": "not_ready",
+"start_time_iso": "2025-11-03T10:00:00-05:00",
+"end_time_iso": null,
+"timezone": "America/New_York",
+"location_text": null,
+"notes": "Time set but no place specified in thread.",
+"confidence": 0.93,
+"reason": "No location confirmed."
+}
+
+Example F — Confirmed with earlier place reference
+
+INPUT:
+Agent (earlier): “Showings are at 200 Boylston St, back entrance.”
+Agent (later): “Does Thu Nov 6 at 2 PM work?”
+User: “Perfect—see you then.”
+
+OUTPUT:
+{
+"version": "1.0",
+"ready": true,
+"status": "confirmed",
+"start_time_iso": "2025-11-06T14:00:00-05:00",
+"end_time_iso": null,
+"timezone": "America/New_York",
+"location_text": "200 Boylston St, back entrance",
+"notes": "User accepted time; place was explicitly set earlier and not changed.",
+"confidence": 0.94,
+"reason": "User acceptance (‘Perfect—see you then’) refers to the latest proposed time and earlier specified location."
+}
+"""
+
+
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 # 1D. Helpers
@@ -105,8 +287,9 @@ Example closing line:
 def chat_key(listing_id: str) -> str:
     return f"chat_history_{listing_id}"
 
-# Define the model to use from OpenAI
+# Define the model to use from OpenAI and timezone of showings
 model_name = "gpt-4.1"
+default_tz = "America/New_York"
 
 # Creates a reply by calling OpenAI's API based on previously defined prompt
 def generate_reply(user_message: str, history: list[dict], listing: dict) -> str:
@@ -123,7 +306,6 @@ def generate_reply(user_message: str, history: list[dict], listing: dict) -> str
             {"role": "system", "content": listing_fact_for_llm(listing)}
         ]
         messages.extend(recent)
-        messages.append({"role":"user", "content": user_message})
         
         resp = client.chat.completions.create(
             model = model_name,
@@ -146,6 +328,9 @@ def listing_fact_for_llm(current_listing: dict) -> str:
         f" - cash required at move: {current_listing['moveincost']}"
     ]
     return "\n".join(lines)
+
+
+
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
