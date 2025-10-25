@@ -565,6 +565,12 @@ def render_card(l):
 
         st.markdown('</div>', unsafe_allow_html=True)
 
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# Side panel for de-gubbing and showing classifier output
+with st.sidebar:
+    st.checkbox("Show classifier debug", key="show_cls_debug", value=True)
+    cls_panel = st.empty()  # we’ll fill this later
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
@@ -590,14 +596,6 @@ if current_page == "home":
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-
-# Side panel for de-bugging and showing classifier output
-
-with st.sidebar:
-    st.checkbox("Show classifier debug", key="show_cls_debug", value=True)
-    cls_panel = st.empty()  # we’ll fill this later
-
-
 # 7B. Chat page
 # Creates a chat page based on the listing which is clicked
 
