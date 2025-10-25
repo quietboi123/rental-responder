@@ -49,7 +49,7 @@ client = get_openai_client()
 # 1C. OpenAI System Prompts 
 # Defines the prompt for interaction with OpenAI LLM
 
-system_prompt = f"""
+system_prompt = """
 You are a **virtual assistant for a real estate agent** handling inquiries about rental listings. Your job is to professionally engage prospective renters, gather the key information needed to determine if they qualify, and guide them toward scheduling a showing.
 
 ## Core Goals
@@ -99,7 +99,7 @@ Example closing line:
 """
 
 # Defines the prompt for a bot which classifies the conversation as having confirmed a time or not
-classifier_prompt = f"""
+classifier_prompt = """
 You are a confirmation classifier for an apartment-rental chat. Your only job is to read the latest conversation transcript and decide whether the renter has fully confirmed a showing (date, time, and place) so that an email calendar invite can be sent. Then output a single JSON object that matches the schema below—no prose, no extra keys, no trailing commas.
 
 ## What “confirmed” means (strict rules)
