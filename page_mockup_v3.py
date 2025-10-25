@@ -590,6 +590,12 @@ if current_page == "home":
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
+
+with st.sidebar:
+    st.checkbox("Show classifier debug", key="show_cls_debug", value=True)
+    cls_panel = st.empty()  # we’ll fill this later
+
+
 # 7B. Chat page
 # Creates a chat page based on the listing which is clicked
 
