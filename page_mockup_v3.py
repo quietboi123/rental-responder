@@ -591,6 +591,8 @@ if current_page == "home":
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 
+# Side panel for de-bugging and showing classifier output
+
 with st.sidebar:
     st.checkbox("Show classifier debug", key="show_cls_debug", value=True)
     cls_panel = st.empty()  # we’ll fill this later
@@ -619,6 +621,11 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         
         # Create a unique key for this listing's chat
         key = chat_key(l["id"])
+
+        # Create a unique key for this chat's classifier result
+        cls_key = f"{key}_classifier_result"
+        if cls_key not in st.session_state:
+            st.session_state[cls_key] = None
 
         # If this is the first time opening this listing, start with a greeting message
         if key not in st.session_state:
@@ -653,8 +660,27 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
             assistant_reply = generate_reply(user_msg, st.session_state[key], l)
             st.session_state[key].append({"role": "assistant", "content": assistant_reply})
 
-            # 3 - Immediately re-run so the new bubble appears above
+            # 3 - Run the classifier bot on the conversation to determine whether or not the user has confirmed a time
+            try:
+                cls_result = classify_showing_confirmation(user_msg, st.session_state[key], l)
+            except Exception as e:
+                cls_result = DEFAULT_CONFIRMATION
+            
+            st.session_state[cls_key] = cls_result
+
+            # 4 - Immediately re-run so the new bubble appears above
             st.rerun()
+        
+        # Side panel to show classifier results
+        if st.session_state.get("show_cls_debug", True):
+            with st.sidebar.expander("Showing confirmation (debug)", expanded = True):
+                latest = st.session_state.get(cls_key)
+                if latest:
+                    st.code(json.dumps(latest, indent = 2, ensure_ascii = False), language = "json")
+                else:
+                    st.caption("No classifier result yet.")
+
+
 
 
 
