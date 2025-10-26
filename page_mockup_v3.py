@@ -314,9 +314,12 @@ def make_ics_invite(
     location: str | None = None,
     description: str | None = None,
     default_minutes: int = 30) -> tuple[str, str]:
-        # 1. Convert ISO times into UTC datetimes
+        # 1. Convert ISO times into UTC datetimes, using a thirty minute default length if none is provided
         start_utc = parse_iso_to_utc(start_time_iso)
-        end_utc = parse_iso_to_utc(end_time_iso)
+        if end_time_iso:
+            end_utc = parse_iso_to_utc(end_time_iso)
+        else:
+            end_utc = start_utc + timedelta(minutes = default_minutes)
         
         # 2. Formatting helper to format times the way ICS expects
         def fmt(dt: datetime) -> str:
