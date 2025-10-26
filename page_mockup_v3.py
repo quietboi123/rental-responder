@@ -507,7 +507,7 @@ def send_email_sendgrid(
         }
         
         # 4. Make the request
-        req = urllib.request.REQUEST(
+        req = urllib.request.Request(
             url = url,
             method = "POST",
             headers = headers,
