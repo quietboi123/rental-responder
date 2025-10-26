@@ -514,8 +514,8 @@ def send_email_sendgrid(
         # 5. Send and surface any HTTP errors
         with urllib.request.urlopen(req) as resp:
             # SendGrid will typically return 202 on success
-            if resp.status not in (200, 202)
-            raise urllib.error.HTTPError(url, resp.status, "Unexpected Status", resp.headers, None)
+            if resp.status not in (200, 202):
+                raise urllib.error.HTTPError(url, resp.status, "Unexpected Status", resp.headers, None)
             
 
 
