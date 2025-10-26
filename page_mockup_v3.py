@@ -6,8 +6,9 @@
 import os 
 import json
 import streamlit as st
+import uuid
 from openai import OpenAI 
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 from typing import TypedDict
 
 st.set_page_config(page_title = "bostonrentals.com (mock)", page_icon = "🏙️", layout = "wide")
@@ -285,7 +286,6 @@ OUTPUT:
 """
 
 
-
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 # 1D. Helpers
@@ -295,6 +295,57 @@ OUTPUT:
 def chat_key(listing_id: str) -> str:
     return f"chat_history_{listing_id}"
 
+# Parses an ISO formatted string to UTC for creation of a calendar event
+def parse_iso_to_utc(iso_str: str) -> datetime:
+    dt = datetime.fromisoformat(iso_str)
+    return dt.astimezone(timezone.utc)
+
+# Creates a calendar event file for email sending
+def make_ics_invite(
+    start_time_iso: str,
+    end_time_iso: str,
+    *, # forces all inputs after the * to be keyword inputs
+    title: str,
+    organizer_email: str,
+    attendee_email: str,
+    location: str | None = None,
+    description: str | None = None,
+    default_minutes: int = 30) -> tuple[str, str]:
+        # 1. Convert ISO times into UTC datetimes
+        start_utc = parse_iso_to_utc(start_time_iso)
+        end_utc = parse_iso_to_utc(end_time_iso)
+        
+        # 2. Formatting helper to format times the way ICS expects
+        def fmt(dt: datetime) -> str:
+            return dt.strftime("%Y%m%dT%H%M%SZ") # e.g., 20251104T200000Z
+            
+        # 3. Build the text of the ICS file
+        uid = f"{uuid.uuid4()}@rental-responder" # a unique ID for the event
+        ics = f"""BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//RentalResponder//EN
+        CALSCALE:GREGORIAN
+        METHOD:REQUEST
+        BEGIN:VEVENT
+        UID:{uid}
+        DTSTAMP:{fmt(datetime.now(timezone.utc))}
+        DTSTART:{fmt(start_utc)}
+        DTEND:{fmt(end_utc)}
+        SUMMARY:{title}
+        DESCRIPTION:{(description or '').replace('\\n', '\\n')}
+        LOCATION:{(location or '')}
+        ORGANIZER;CN=Leasing Agent:MAILTO:{organizer_email}
+        ATTENDEE;CN=Invitee;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:MAILTO{attendee_email}
+        END:VEVENT
+        END:VCALENDAR
+        """.strip()
+        
+        # 4. Create a nice file name
+        filename = f"showing_{start_utc.strftime('%Y%m%dT%H%M')}.ics"
+        
+        return filename, ics
+
+    
 # Define the model to use from OpenAI and timezone of showings
 model_name = "gpt-4.1"
 default_tz = "America/New_York"
