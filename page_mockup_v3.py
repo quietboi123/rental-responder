@@ -35,14 +35,20 @@ def get_secrets(name_env: str, *secrets_path):
         return None
 
 OPENAI_API_KEY = get_secrets("OPENAI_API_KEY", "openai", "api_key")
-SUPABASE_URL = get_secrets("SUPABASE_URL", "supabase", "url")
-SUPABASE_SERVICE_KEY = get_secrets("SUPABASE_SERVICE_KEY", "supabase", "service_key")
+SENDGRID_API_KEY = get_secrets("SENDGRID_API_KEY", "sendgrid", "api_key")
+SENDGRID_FROM_EMAIL = get_secrets("SENDGRID_FROM_EMAIL", "sendgrid", "from_email")
 
 # Create OpenAI client
 def get_openai_client():
     return OpenAI(api_key=OPENAI_API_KEY)
 
 client = get_openai_client()
+
+# Check to see that the sendgrid secrets loaded successfully
+st.write("SENDGRID_API_KEY loaded:", bool(os.environ.get("SENDGRID_API_KEY")))
+st.write("FROM_EMAIL:", bool(os.environ.get("FROM_EMAIL")))
+
+
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
