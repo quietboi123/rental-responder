@@ -303,6 +303,16 @@ def parse_iso_to_utc(iso_str: str) -> datetime:
     dt = datetime.fromisoformat(iso_str)
     return dt.astimezone(timezone.utc)
 
+# Helper for ics text escaping
+def ics_escape(text: str | None) -> str:
+    if not text:
+        return ""
+    return (text
+            .replace("\\", "\\\\")   # backslash first
+            .replace("\n", r"\n")
+            .replace(",", r"\,")
+            .replace(";", r"\;"))
+
 # Creates a calendar event file for email sending
 def make_ics_invite(
     start_time_iso: str,
@@ -327,24 +337,33 @@ def make_ics_invite(
             
         # 3. Build the text of the ICS file
         uid = f"{uuid.uuid4()}@rental-responder" # a unique ID for the event
-        ics = f"""BEGIN:VCALENDAR
-        VERSION:2.0
-        PRODID:-//RentalResponder//EN
-        CALSCALE:GREGORIAN
-        METHOD:REQUEST
-        BEGIN:VEVENT
-        UID:{uid}
-        DTSTAMP:{fmt(datetime.now(timezone.utc))}
-        DTSTART:{fmt(start_utc)}
-        DTEND:{fmt(end_utc)}
-        SUMMARY:{title}
-        DESCRIPTION:{(description or '').replace('\\n', '\\n')}
-        LOCATION:{(location or '')}
-        ORGANIZER;CN=Leasing Agent:MAILTO:{organizer_email}
-        ATTENDEE;CN=Invitee;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:MAILTO{attendee_email}
-        END:VEVENT
-        END:VCALENDAR
-        """.strip()
+        summary = ics_escape(title)
+        desc = ics_escape(description)
+        loc = ics_escape(location)
+        lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//RentalResponder//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:REQUEST",
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{fmt(datetime.now(timezone.utc))}",
+            f"DTSTART:{fmt(start_utc)}",
+            f"DTEND:{fmt(end_utc)}",
+            f"SUMMARY:{summary}",
+            f"DESCRIPTION:{desc}",
+            f"LOCATION:{loc}",
+            f"ORGANIZER;CN=Leasing Agent:MAILTO:{organizer_email}",
+            f"ATTENDEE;CN=Invitee;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:MAILTO:{attendee_email}",
+            "SEQUENCE:0",
+            "STATUS:CONFIRMED",
+            "TRANSP:OPAQUE",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ]
+        
+        ics = "\r\n".join(lines)
         
         # 4. Create a nice file name
         filename = f"showing_{start_utc.strftime('%Y%m%dT%H%M')}.ics"
