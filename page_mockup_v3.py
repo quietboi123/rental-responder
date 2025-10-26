@@ -3,10 +3,13 @@
 # 1A. Imports and page setup 
 # Imports packages and sets up basic page configuration.
 
+import base64
 import os 
 import json
 import streamlit as st
 import uuid
+import urllib.request
+import urllib.error
 from openai import OpenAI 
 from datetime import date, datetime, timezone, timedelta
 from typing import TypedDict
@@ -460,6 +463,62 @@ def classify_showing_confirmation(user_message: str, history: list[dict], listin
         out["reason"] = f"{type(e).__name__}: {str(e)[:200]}"
         return out
 
+
+# Sends calendar invite by hitting SendGrid API
+def send_email_sendgrid(
+    *, # forces every input after to be a keyword input
+    to_email: str,
+    subject: str,
+    body_text: str,
+    ics_filename: str,
+    ics_text: str,
+    from_email: str) -> None:
+        """
+        Sends a plain text email with an ics calendar attachment via SendGrid
+        Raises urllib.error.HTTPError on non-2xx responses
+        """
+        
+        # 1. Endpoin and auth
+        url = "https://api.sendgrid.com/v3/mail/send"
+        headers = {
+            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        # 2. Build the JSON payload to sent to SendGrid
+        payload = {
+            "personalizations": [{"to": [{"email": to_email}]}],
+            "from": {"email": from_email},
+            "subject": subject,
+            "content": [{"type": "text/plain", "value": body_text}],
+            
+            # 3. Attach the ics (base64 encoded)
+            "attachments": [
+                {
+                    "content": base64.b64encode(ics_text.encode("utf-8")).decode("utf-8"),
+                    "type": "text/calendar; method=REQUEST",
+                    "filename": ics_filename,
+                    "disposition": "attachment"
+                }
+            ],
+        }
+        
+        # 4. Make the request
+        req = urllib.request.REQUEST(
+            url = url,
+            method = "POST",
+            headers = headers,
+            data = json.dumps(payload).encode("utf-8")
+        )
+        
+        # 5. Send and surface any HTTP errors
+        with urllib.request.urlopen(req) as resp:
+            # SendGrid will typically return 202 on success
+            if resp.status not in (200, 202)
+            raise urllib.error.HTTPError(url, resp.status, "Unexpected Status", resp.headers, None)
+            
+
+
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 # 2. CSS styles (visual design) 
@@ -628,6 +687,42 @@ def render_card(l):
 with st.sidebar:
     st.checkbox("Show classifier debug", key="show_cls_debug", value=True)
     cls_panel = st.empty()  # we’ll fill this later
+
+# Manual SendGrid test in sidebar to make sure plumbing works
+with st.sidebar.expander("DEV - Send a test invite", expanded = False):
+    test_email = st.text_input("Send test invite to", value = "", key = "sg_test_email")
+    # Default to 10 minutes from now
+    start_iso_default = (datetime.now(timezone.utc) + timedelta(minutes = 10)).astimezone().isoformat(timespec = "seconds")
+    st.caption(f"Default start (editable in code): {start_iso_default}")
+    
+    if st.button("Send test invite now", key = "sg_test_send"):
+        if not test_email:
+            st.warning("Enter an email address first")
+        else:
+            # Build the ics
+            ics_filename, ics_text = make_ics_invite(
+                start_time_iso = start_iso_default,
+                end_time_iso = None,
+                title = "Test Showing",
+                location = "123 Main St, Boston",
+                description = "This is a test invitation to see if plumbing works",
+                organizer_email = SENDGRID_FROM_EMAIL,
+                attendee_email = test_email
+            )
+            # Send via SendGrid
+            try:
+                send_email_sendgrid(
+                    to_email = test_email,
+                    subject = "Test Invite - Andres App",
+                    body_text = f"Your test showing is at {start_iso_default}",
+                    ics_filename = ics_filename,
+                    ics_text = ics_text,
+                    from_email = SENDGRID_FROM_EMAIL
+                )
+                st.success("Sent! Check your inbox and open the .ics attachment")
+            except Exception as e:
+                st.error(f"Send failed: {type(e).__name__}: {str(e)[:300]}") 
+ 
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
