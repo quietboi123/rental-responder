@@ -45,8 +45,8 @@ def get_openai_client():
 client = get_openai_client()
 
 # Check to see that the sendgrid secrets loaded successfully
-st.write("SENDGRID_API_KEY loaded:", bool(os.environ.get("SENDGRID_API_KEY")))
-st.write("FROM_EMAIL:", bool(os.environ.get("FROM_EMAIL")))
+st.write("SENDGRID_API_KEY loaded:", bool(SENDGRID_API_KEY))
+st.write("FROM_EMAIL:", SENDGRID_FROM_EMAIL)
 
 
 
