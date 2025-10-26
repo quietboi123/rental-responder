@@ -512,7 +512,7 @@ def send_email_sendgrid(
             "personalizations": [{"to": [{"email": to_email}]}],
             "from": {"email": from_email},
             "subject": subject,
-            "content": [{"type": "text/plain", "value": body_text}],
+            "content": [{"type": "text/plain", "value": body_text}, {"type": "text/calendar; method=REQUEST; charset=UTF-8", "value": ics_text}],
             
             # 3. Attach the ics (base64 encoded)
             "attachments": [
