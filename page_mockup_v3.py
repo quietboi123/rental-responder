@@ -449,7 +449,7 @@ def listing_fact_for_llm(current_listing: dict) -> str:
 
 
 # Classifies the conversation as having a confirmed showing date and time or not
-def classify_showing_confirmation(user_message: str, history: list[dict], listing: dict):
+def classify_showing_confirmation(user_message: str, history: list[dict], listing: dict) -> dict:
     """
     Call the LLM to decide if the conversation has a fully-confirmed showing
     (date, time, place). Returns a strict dict that ALWAYS has the same keys.
