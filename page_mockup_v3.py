@@ -873,39 +873,6 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
                 else:
                     st.caption("No classifier result yet.")
 
-#-------------------------------------------------------------
-#-------------------------------------------------------------
-# 8. Calendar invite email
-# Sends an email with a calendar invitation for a showing
-
-        # Check if email is ready to send and has not yet been sent. If both criteria are met, send email
-        if cls_result.get("ready") == True and invite_sent == False:
-            # 1. Build the ics file
-            ics_filename, ics_text = make_ics_invite(
-                start_time_iso = cls_result.get("start_time_iso"),
-                end_time_iso = cls_result.get("end_time_iso"),
-                title = "Test Showing",
-                location =  l["address"],
-                description = "This is a test invitation to demonstrate functionality",
-                organizer_email = SENDGRID_FROM_EMAIL,
-                attendee_email = cls_result.get("user_email")
-            )
-            # 2. Send via SendGrid
-            try:
-                send_email_sendgrid(
-                    to_email = cls_result.get("user_email"),
-                    subject = "Test Invite - Andres App",
-                    body_text = f"Your test showing is at {cls_result.get("start_time_iso")}",
-                    ics_filename = ics_filename,
-                    ics_text = ics_text,
-                    from_email = SENDGRID_FROM_EMAIL
-                )
-                st.success("Sent! Check your inbox and open the .ics attachment")
-                invite_sent == True 
-            except Exception as e:
-                st.error(f"Send failed: {type(e).__name__}: {str(e)[:300]}")
-
-
 
 
 
