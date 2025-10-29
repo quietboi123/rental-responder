@@ -825,6 +825,10 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         if invite_key not in st.session_state:
             st.session_state[invite_key] = False
 
+        invite_status_key = f"{key}_invite_status"
+        if invite_status_key not in st.session_state:
+            st.session_state[invite_status_key] = None
+
         # If this is the first time opening this listing, start with a greeting message
         if key not in st.session_state:
             st.session_state[key] = [
@@ -899,10 +903,13 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
                         ics_text = ics_text,
                         from_email = SENDGRID_FROM_EMAIL
                     )
-                    st.success(f"Invite sent to {user_email}")
+                    
+                st.success(f"Invite sent to {user_email}")
+                st.session_state[invite_status_key] = f"Sent to {user_email}"
             except Exception as e:
                 err = f"{type(e).__name__}: {str(e)[:300]}"
                 st.error(f"Invite faled to send - {err}")
+                st.session_state[invite_status_key] = f"Failed: {err}"
             finally:
                 # Track that email has been sent
                 st.session_state[invite_key] = True
@@ -915,6 +922,10 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
                     st.code(json.dumps(latest, indent = 2, ensure_ascii = False), language = "json")
                 else:
                     st.caption("No classifier result yet.")
+                    
+            status = st.session_state.get(invite_status_key)
+            if status:
+                st.sidebar.caption(f"Invite status: {status}")
 
 
 
