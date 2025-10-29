@@ -820,6 +820,11 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
         if cls_key not in st.session_state:
             st.session_state[cls_key] = None
 
+        # Create a per-chat flag for whether an invite send has been attempted
+        invite_key = f"{key}_invite_sent"
+        if invite_key not in st.session_state:
+            st.session_state[invite_key] = False
+
         # If this is the first time opening this listing, start with a greeting message
         if key not in st.session_state:
             st.session_state[key] = [
@@ -863,6 +868,44 @@ elif current_page == "chat" and selected_id: #if current_page = "chat" AND selec
 
             # 4 - Immediately re-run so the new bubble appears above
             st.rerun()
+            
+        # Send the email invitation if user is ready
+        result = st.session_state.get(cls_key)
+        if result and (result.get("ready") is True) and (st.session_state[invite_key] is False):
+            user_email = result.get("user_email")
+            start_iso = result.get("start_time_iso")
+            end_iso = result.get("end_time_iso")
+            location = l["address"]
+            tz = result.get("timezone")
+            
+            try:
+                with st.spinner("Preparing and sending your calendar invite..."):
+                    # Make the ics file
+                    ics_filename, ics_text = make_ics_invite(
+                        start_time_iso = start_iso,
+                        end_time_iso = end_iso,
+                        title = "Test showing",
+                        organizer_email = SENDGRID_FROM_EMAIL,
+                        attendee_email = user_email,
+                        location = location,
+                        description = "A calendar invite to demonstrate functionality"
+                    )
+                    # Trigger the email send
+                    send_email_sendgrid(
+                        to_email = user_email,
+                        subject = "Test invite - Andres app",
+                        body_text = f"Your showing starts at {start_iso}",
+                        ics_filename = ics_filename,
+                        ics_text = ics_text,
+                        from_email = SENDGRID_FROM_EMAIL
+                    )
+                    st.success(f"Invite sent to {user_email}")
+            except Exception as e:
+                err = f"{type(e).__name__}: {str(e)[:300]}"
+                st.error(f"Invite faled to send - {err}")
+            finally:
+                # Track that email has been sent
+                st.session_state[invite_key] = True
         
         # Side panel to show classifier results
         if st.session_state.get("show_cls_debug", True):
