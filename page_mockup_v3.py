@@ -136,11 +136,10 @@ If the user says “send the invite” but lacks a specific time and place, it i
 If there is a conflict (multiple times mentioned without a clear final choice), it is not confirmed.
 If a reschedule is requested or the user introduces uncertainty, it is not confirmed.
 
-## Timezone and date handling
+## Timezone handling
 
 Use the conversation’s stated timezone if present.
 Otherwise assume "America/New_York" as the default.
-Use todays current date (provided further down below) to determine what date is being scheduled based on context, e.g., if the user says "Wednesday works great", assume they are referring to the first Wednesday following today's date
 Output all datetimes in ISO 8601 with timezone offset, e.g., "2025-11-04T15:00:00-05:00".
 If an end time is not explicitly provided but a duration is given (e.g., “30 minutes”), compute end_time_iso. Otherwise set end_time_iso as 30 minutes after the start time.
 
@@ -152,7 +151,6 @@ Return exactly one JSON object with these keys in this order. Use null when unkn
 "ready": true|false,
 "user_email": "string" | null,
 "status": "confirmed" | "tentative" | "proposal" | "ambiguous" | "conflict" | "not_ready",
-"today_date":  "YYYY-MM-DD" | null,
 "start_time_iso": "YYYY-MM-DDTHH:MM:SS±HH:MM" | null,
 "end_time_iso": "YYYY-MM-DDTHH:MM:SS±HH:MM" | null,
 "timezone": "IANA/Zone" | null,
@@ -194,7 +192,6 @@ OUTPUT:
 "ready": true,
 "user_email": "isabella.epshtein@gmail.com",
 "status": "confirmed",
-"today_date":  "2025-10-20",
 "start_time_iso": "2025-11-04T15:00:00-05:00",
 "end_time_iso": null,
 "timezone": "America/New_York",
@@ -215,7 +212,6 @@ OUTPUT:
 "ready": false,
 "user_email": null,
 "status": "ambiguous",
-"today_date":  "2025-01-01",
 "start_time_iso": null,
 "end_time_iso": null,
 "timezone": "America/New_York",
@@ -236,7 +232,6 @@ OUTPUT:
 "ready": false,
 "user_email": null,
 "status": "proposal",
-"today_date":  "2025-10-01",
 "start_time_iso": "2025-11-05T17:30:00-05:00",
 "end_time_iso": null,
 "timezone": "America/New_York",
@@ -257,7 +252,6 @@ OUTPUT:
 "ready": false,
 "user_email": null,
 "status": "conflict",
-"today_date":  "2025-09-05",
 "start_time_iso": null,
 "end_time_iso": null,
 "timezone": "America/New_York",
@@ -278,7 +272,6 @@ OUTPUT:
 "ready": false,
 "user_email": null,
 "status": "not_ready",
-"today_date":  "2025-10-25",
 "start_time_iso": "2025-11-03T10:00:00-05:00",
 "end_time_iso": null,
 "timezone": "America/New_York",
@@ -301,7 +294,6 @@ OUTPUT:
 "ready": true,
 "user_email": "andres.hoffman.pena@gmail.com",
 "status": "confirmed",
-"today_date":  "2025-10-01",
 "start_time_iso": "2025-11-06T14:00:00-05:00",
 "end_time_iso": null,
 "timezone": "America/New_York",
@@ -310,9 +302,6 @@ OUTPUT:
 "confidence": 0.94,
 "reason": "User acceptance (‘Perfect—see you then’) refers to the latest proposed time and earlier specified location. User then explicitly provided an email address."
 }
-
-## Today's Date
-Today's date is listed below. Use this to infer which days the user and agent are referring to when they don't give an explicit date.
 """
 
 
@@ -414,7 +403,6 @@ DEFAULT_CONFIRMATION = {
     "ready": False,
     "user_email": None,
     "status": "not_ready",
-    "today_date": today,
     "start_time_iso": None,
     "end_time_iso": None,
     "timezone": "America/New_York",
@@ -472,8 +460,7 @@ def classify_showing_confirmation(user_message: str, history: list[dict], listin
     recent = history
 
     messages = [
-        {"role": "system", "content": classifier_prompt},
-        {"role": "system", "Content": today}
+        {"role": "system", "content": classifier_prompt}
     ]
     messages.extend(recent)
 
