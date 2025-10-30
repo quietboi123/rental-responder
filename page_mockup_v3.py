@@ -136,10 +136,11 @@ If the user says “send the invite” but lacks a specific time and place, it i
 If there is a conflict (multiple times mentioned without a clear final choice), it is not confirmed.
 If a reschedule is requested or the user introduces uncertainty, it is not confirmed.
 
-## Timezone handling
+## Timezone and date handling
 
 Use the conversation’s stated timezone if present.
 Otherwise assume "America/New_York" as the default.
+Use todays current date to determine what date is being scheduled based on context, e.g., if the user says "Wednesday works great", assume they are referring to the first Wednesday following today's date
 Output all datetimes in ISO 8601 with timezone offset, e.g., "2025-11-04T15:00:00-05:00".
 If an end time is not explicitly provided but a duration is given (e.g., “30 minutes”), compute end_time_iso. Otherwise set end_time_iso as 30 minutes after the start time.
 
