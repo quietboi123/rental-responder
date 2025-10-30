@@ -10,6 +10,7 @@ import streamlit as st
 import uuid
 import urllib.request
 import urllib.error
+import zoneinfo
 from openai import OpenAI 
 from datetime import date, datetime, timezone, timedelta
 from typing import TypedDict
@@ -112,9 +113,20 @@ Example closing line:
 ### Property Details Listed As Follows
 """
 
-# Defines the prompt for a bot which classifies the conversation as having confirmed a time or not
-classifier_prompt = """
+# Defines the prompt for a bot which classifies the conversation as having confirmed a time or not. Does not yet include current date
+classifier_prompt_no_today = """
 You are a confirmation classifier for an apartment-rental chat. Your only job is to read the latest conversation transcript and decide whether the renter has fully confirmed a showing (date, time) and provided an email address so that an email calendar invite can be sent. Then output a single JSON object that matches the schema below—no prose, no extra keys, no trailing commas.
+
+# Runtime context (do not ignore)
+REFERENCE_NOW_ISO: {{NOW_ISO}}      # e.g., 2025-10-29T21:07:00-04:00
+DEFAULT_TIMEZONE: {{DEFAULT_TZ}}    # e.g., America/New_York
+
+# Date resolution rules (must follow strictly)
+- Interpret any relative dates for scheduling a showing (e.g., “next Tuesday”, “tomorrow 3 pm”) relative to REFERENCE_NOW_ISO.
+- If a month/day for scheduling is given without a year, assume the same year as REFERENCE_NOW_ISO unless that date has already passed relative to REFERENCE_NOW_ISO; in that case, roll to the next year.
+- If a weekday is given without a calendar date, choose the next occurrence of that weekday (not the same-day occurrence if it has already passed).
+- If a time is given without timezone, use DEFAULT_TIMEZONE.
+- If you cannot resolve a single, unambiguous concrete datetime, set ready=false and status="ambiguous" (do not guess).
 
 ## What “confirmed” means (strict rules)
 
@@ -304,6 +316,11 @@ OUTPUT:
 }
 """
 
+# Adds in current date context to our classifier prompt
+
+default_tz = "America/New_York"
+NOW_ISO = datetime.now(zoneinfo.ZoneInfo(default_tz)).isoformat(timespec="seconds")
+classifier_prompt = classifier_prompt_no_today.replace("{{NOW_ISO}}", NOW_ISO).replace("{{DEFAULT_TZ}}", default_tz)
 
 #-------------------------------------------------------------
 #-------------------------------------------------------------
