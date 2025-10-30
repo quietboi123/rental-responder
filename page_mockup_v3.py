@@ -303,6 +303,9 @@ OUTPUT:
 "confidence": 0.94,
 "reason": "User acceptance (‘Perfect—see you then’) refers to the latest proposed time and earlier specified location. User then explicitly provided an email address."
 }
+
+## Today's Date
+Today's date is listed below. Use this to infer which days the user and agent are referring to when they don't give an explicit date.
 """
 
 
@@ -395,6 +398,9 @@ def make_ics_invite(
 model_name = "gpt-4.1"
 default_tz = "America/New_York"
 
+# Pull current date for scheduling classifier
+today = str(date.today())
+
 # Define default confirmation JSON as a fail safe for my classifier bot
 DEFAULT_CONFIRMATION = {
     "version": "1.0",
@@ -459,6 +465,7 @@ def classify_showing_confirmation(user_message: str, history: list[dict], listin
 
     messages = [
         {"role": "system", "content": classifier_prompt},
+        {"role": "system", "Content": today}
     ]
     messages.extend(recent)
 
