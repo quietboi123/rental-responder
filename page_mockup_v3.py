@@ -414,6 +414,7 @@ DEFAULT_CONFIRMATION = {
     "ready": False,
     "user_email": None,
     "status": "not_ready",
+    "today_date": today,
     "start_time_iso": None,
     "end_time_iso": None,
     "timezone": "America/New_York",
